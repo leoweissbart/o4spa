@@ -42,9 +42,9 @@ plt.legend(('Power','Trigger'),loc='best')
 #u=trigger            (not used)
 #y=ladderstep
 #z=bitvalue           (not used)
-model_raw_data = pd.read_csv('trainingset.csv',header=23,names = ('t','x','u','y','z'))
+model_raw_data = pd.read_csv('C:/Users/Leo/Documents/ecc_FPGA_rev-1_order4/ecc_order4_256_avg64.csv',header=23,names = ('t','x','u','y','z'))
 
-model_raw_data.x-=0.3
+# model_raw_data.x-=0.3
 plt.figure()
 plt.title('Training set')
 plt.plot(model_raw_data.t,model_raw_data.x,model_raw_data.t,model_raw_data.y)
