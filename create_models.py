@@ -10,16 +10,7 @@ from patternClassification import patternClassification
 from correlation_vs_model import correlation_vs_model_v3
 from order4_HL_to_keybits import order4_HL_to_keybits
 from printHex256bits import printHex256bits
-import time
-
-debut = time.time()
-
-def butter_lowpass_filter(data,cut_freq, fs, order=5):
-    nyq = 0.5 * fs
-    cut_freq = cut_freq / nyq
-    b,a=signal.butter(order,cut_freq,btype='lowpass')
-    y = signal.lfilter(b, a, data)
-    return y
+from scipy.interpolate import interp1d
 
 
 #for model
@@ -28,38 +19,41 @@ def butter_lowpass_filter(data,cut_freq, fs, order=5):
 #u=trigger            (not used)
 #y=ladderstep
 #z=bitvalue           (not used)
-model_raw_power = pd.read_csv('C:/Users/Leo/Documents/ecc_FPGA_rev-1_order4/ecc_order4_256_avg64.csv',header=23,names = ('t','x'))
-model_raw_trigger = pd.read_csv('C:/Users/Leo/Documents/ecc_FPGA_rev-1_order4/ecc_order4_256_avg64_trig.csv',header=23,names = ('t','y'))
+model_raw_power = pd.read_csv('ecc_order4_256_avg64.csv',header=23,names = ('t','x'))
+model_raw_trigger = pd.read_csv('ecc_order4_256_avg64_trig.csv',header=23,names = ('t','y'))
 #should use pd.merge() to fuse the two frames
 
-# model_raw_data.x-=0.3
+unknown_raw_power = pd.read_csv('C:/Users/Leo/Documents/ecc_FPGA_rev-1_order4_day2/ecc_order4_256_avg64_pssvprobe.csv',header=23, names=('t','x'))
+unknown_raw_trigger = pd.read_csv('C:/Users/Leo/Documents/ecc_FPGA_rev-1_order4_day2/ecc_order4_256_avg64_pssvprobe_trig.csv',header=23, names=('t','y'))
+
+#if the sampling frequency of testing dataset is lower than the one for training dataset, we should do an interpolation to match the total number of points
+#we create interpolation for power and trigger so the data is the same size as training data (we lose time information)
+x=unknown_raw_power.t
+xnew=np.linspace(unknown_raw_power.t.iloc[0],unknown_raw_power.t.iloc[-1],len(model_raw_power.t))
+f_power=interp1d(x,unknown_raw_power.x,kind='cubic')
+f_trigger=interp1d(x,unknown_raw_trigger.y)
+unknwon_inter_power=f_power(xnew)#interpolation of power trace of unknown attack
+unknown_inter_trigger=f_trigger(xnew)#interpolation of trigger trace of unknwon attack
+#change the name of filtered data if it not filtered change x to power and y to trigger
+model_filtered_x=model_raw_power.x
+model_filtered_y=model_raw_trigger.y
+
 plt.figure()
 plt.title('Training set')
-plt.plot(model_raw_power.t,model_raw_power.x,model_raw_trigger.t,model_raw_trigger.y)
+plt.plot(model_raw_power.t,model_filtered_x,model_raw_trigger.t,model_filtered_y)
+plt.xlabel('Time (in Second)')
+plt.ylabel('Tension (in Volt)')
+plt.legend(('Power','Ladderstep'),loc='best')
+plt.figure()
+plt.title('Test set')
+plt.plot(xnew,unknwon_inter_power,xnew,unknown_inter_trigger)
 plt.xlabel('Time (in Second)')
 plt.ylabel('Tension (in Volt)')
 plt.legend(('Power','Ladderstep'),loc='best')
 
 
-
-#Be carefull because for now there is no numeric filter so if the signal is noisy, the averaging will reduce the voltage level and the models won't fit with the patterns from power traces.
-# fs=1e3
-# cutoff_hz=1250
-# #filter the mesure and replace its value in the data_frame
-# model_filtered_x=butter_lowpass_filter(model_raw_data.x,cutoff_hz,fs)
-# model_filtered_y=butter_lowpass_filter(model_raw_data.y,cutoff_hz,fs)
-# plt.figure()
-# plt.title('Filterd training set')
-# plt.plot(model_raw_data.t,model_filtered_x,model_raw_data.t,model_filtered_y)
-# plt.xlabel('Time (in Second)')
-# plt.ylabel('Tension (in Volt)')
-# plt.legend(('Power','Ladderstep'),loc='best')
-
-model_filtered_x=model_raw_power.x
-model_filtered_y=model_raw_trigger.y
-
 #recover keybits from file keybits.txt
-with open('C:/Users/Leo/Documents/ecc_FPGA_rev-1_order4/keybits_bin.txt') as f:
+with open('keybits_bin.txt') as f:
     keybits = f.read().splitlines()
 keybits = [int(i) for i in keybits]
 #transform the 0 and 1 of bit key into high and low levels of trace for X and Z abd take one to class the patterns
@@ -68,40 +62,19 @@ print(predicted_level_z)
 #cut the measure in pattern according to the signal (supervised)
 A,B1,B2=patternClassification(model_filtered_x,model_filtered_y,predicted_level_z)
 
-# ta=np.linspace(0,len(A[0])-1,len(A[0]))
-# colors=['k','g','r','y','b']
-# j=0
-# plt.figure()
-# for i in range(len(A)):
-#     j=(i%5)
-#     plt.plot(ta,A[i],colors[j])
-#     plt.title('A')
-
-# tb=np.linspace(0,len(B[0])-1,len(B[0]))
-# plt.figure()
-# for i in range(len(B)):
-#     j=i%5
-#     plt.plot(tb,B[i],colors[j])
-#     plt.title('B')
 
 #create the model of pattern A and B
 model_low=np.mean(A,axis=0)
 model_high1=np.mean(B1,axis=0)
 model_high2=np.mean(B2,axis=0)
-model_low-=np.mean(model_low)
-model_high1-=np.mean(model_high1)
-model_high2-=np.mean(model_high2)
+#normalization by Z-score
+model_low=(model_low-np.mean(model_low))/(np.std(model_low))
+model_high1=(model_high1-np.mean(model_high1))/(np.std(model_high1))
+model_high2=(model_high2-np.mean(model_high2))/(np.std(model_high2))
 
 
-#print both model
+#print models
 t=np.linspace(0,(len(model_low)-1)*5e-10,len(model_low))
-# fig = plt.figure()
-# plt.title('Model A,B1,B2 for filtered trace (model_low, model_high1,model_high2)')
-# plt.plot(t,model_low,'r',t,model_high1,'b',t,model_high2,'k')
-# plt.xlabel('Time (in Second)')
-# plt.ylabel('Tension (in Volt)')
-# plt.legend(('A','B1','B2'),loc='best')
-# fig = plt.figure()
 plt.figure()
 plt.title('Model B1 for filtered trace (model_high1)')
 plt.plot(t,model_high1,'b')
@@ -112,25 +85,21 @@ plt.title('Model A for filtered trace (model_low)')
 plt.plot(t,model_low,'r')
 plt.xlabel('Time (in Second)')
 plt.ylabel('Tension (in Volt)')
-fig = plt.figure()
+plt.figure()
 plt.title('Model B2 for filtered trace (model_high2)')
 plt.plot(t,model_high2,'k')
 plt.xlabel('Time (in Second)')
 plt.ylabel('Tension (in Volt)')
-# fig.savefig('C:/Users/Leo/Documents/VSworkspace/o4spa/models16000pts/%d.png' % num)
-# plt.close(fig)
 
 
 #we do correlation
-unknown_level = correlation_vs_model_v3(model_filtered_x,model_filtered_y,model_high1,model_high2,model_low)
+unknown_level = correlation_vs_model_v3(unknwon_inter_power,unknown_inter_trigger,model_high1,model_high2,model_low)
 
 
-# #and convert the levels into keybits with order 4 point algorithm
+#and convert the levels into keybits with order 4 point algorithm
 unknown_keybits=order4_HL_to_keybits(unknown_level,'z')
-
+#print extracted key
 printHex256bits(unknown_keybits)
 
-# fin = time.time()
-# print("time = ",fin-debut," s.")
 
 plt.show()
