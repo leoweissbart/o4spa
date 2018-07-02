@@ -17,9 +17,9 @@ def patternClassification(data,trigger,level):
     del m[:3263]#remove the points before laddersteps. This nb have been adjusted regarding the curves obtained after patternclassification
     
     #plot m
-    tm=np.linspace(0,len(m)-1,len(m))
-    plt.figure()
-    plt.plot(tm,m)
+    # tm=np.linspace(0,len(m)-1,len(m))
+    # plt.figure()
+    # plt.plot(tm,m)
 
     ladderstep=[]
     k=0#indenter to go through 256 loops of ladderstep

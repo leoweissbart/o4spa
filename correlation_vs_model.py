@@ -1,10 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from pylab import *
+from pylab import subplot
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 #takes the filtered data and the trigger signal for entire SCM and the 2 model of pattern to return levels detected on the trace
-def correlation_vs_model_v3(data,trigger,modelH1,modelH2,modelL):
+def correlation_vs_model(data,trigger,modelH1,modelH2,modelL):
     i,it=0,0
     allseg,seg=[],[]
     while trigger[it]>-2:#we use the trigger to find the beginning of ML algorithm
@@ -16,7 +16,7 @@ def correlation_vs_model_v3(data,trigger,modelH1,modelH2,modelL):
         n_points+=1
         j+=1
     i=int(it)
-    print(n_points/256,len(modelH1))
+    # print(n_points/256,len(modelH1))
     #we separate all the laddersteps in the dataset into 'allseg'
     for k in range(256):
         for j in range(len(modelH1)):
@@ -27,25 +27,11 @@ def correlation_vs_model_v3(data,trigger,modelH1,modelH2,modelL):
         seg=(seg-np.mean(seg))/(np.std(seg))#normalization by Z-score of the segments
         allseg.append(seg)
         seg=[]
-    
-    # ti=np.linspace(0,len(allseg[0]-1),len(allseg[0]))
-    # plt.figure()
-    # for i in range(len(allseg)):
-    #     plt.plot(ti,allseg[i])
-    # plt.show()
 
     #compute correlation for every models
     array_corrH1,array_corrH2,array_corrL=[],[],[]
     t=np.linspace(0,len(modelH1)-1,len(modelH1))
     for i in range(len(allseg)):
-        # if i>202:
-        # plt.figure()
-        # plt.plot(t,allseg[i],'#1f77b4')
-        # plt.show()
-
-        # plt.figure()
-        # plt.plot(t,allseg[i],t,modelH1,'b',t,modelL,'r')
-        # plt.show()
         corrL=np.correlate(allseg[i],modelL)
         corrH1=np.correlate(allseg[i],modelH1)
         corrH2=np.correlate(allseg[i],modelH2)
@@ -62,9 +48,6 @@ def correlation_vs_model_v3(data,trigger,modelH1,modelH2,modelL):
     plt.grid()
     plt.legend(('Correlation with model L','Correlation with model H1','Correlation with model H2'),loc='best')
 
-    # array_corrH1-=np.mean(array_corrH1)
-    # array_corrH2-=np.mean(array_corrH2)
-    # array_corrL-=np.mean(array_corrL)
 
     t=np.linspace(0,len(array_corrH1)-1,len(array_corrH1))
     fig=plt.figure()
@@ -122,5 +105,4 @@ def correlation_vs_model_v3(data,trigger,modelH1,modelH2,modelL):
             level.append(0)
         else:
             level.append(2)#if there is problem with comparaison
-    print(level)
     return level
