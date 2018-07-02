@@ -1,4 +1,4 @@
-# o4spa
+# o4spa (fpga)
 
 ### information
 This program analyze an order 4 point attack on Curve25519 for an FPGA implementation of ECC. The board is a ArmFrogs-BLUE that
