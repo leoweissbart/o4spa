@@ -9,7 +9,7 @@ The device used for the attack is ArduinoUNO and traces are power consumption of
 To run the program, you should have installed python. We recommand the Anaconda distribution.
 Go to the folder containing the program and run on your python console box the following line:
 ```
-python .\readdatta.py
+python .\readdata.py
 ```
 
 # o8spa
