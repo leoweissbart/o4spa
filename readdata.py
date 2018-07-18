@@ -13,9 +13,6 @@ from printHex256bits import printHex256bits
 from scipy.interpolate import interp1d
 import time
 
-
-
-
 #for model
 #t=time
 #x=power consuption
@@ -26,8 +23,8 @@ model_raw_power = pd.read_csv('ecc_order4_256_avg64.csv',header=23,names = ('t',
 model_raw_trigger = pd.read_csv('ecc_order4_256_avg64_trig.csv',header=23,names = ('t','y'))
 #should use pd.merge() to fuse the two frames
 
-unknown_raw_power = pd.read_csv('C:/Users/Leo/Documents/ecc_FPGA_rev-1_order4_day2/ecc_order4_256_avg64_pssvprobe.csv',header=23, names=('t','x'))
-unknown_raw_trigger = pd.read_csv('C:/Users/Leo/Documents/ecc_FPGA_rev-1_order4_day2/ecc_order4_256_avg64_pssvprobe_trig.csv',header=23, names=('t','y'))
+unknown_raw_power = pd.read_csv('C:/Users/Leo/Documents/ecc_FPGA_rev-1_order4_day2/ecc_order4_256_avg64_data2.csv',header=23, names=('t','x'))
+unknown_raw_trigger = pd.read_csv('C:/Users/Leo/Documents/ecc_FPGA_rev-1_order4_day2/ecc_order4_256_avg64_data2_trig.csv',header=23, names=('t','y'))
 
 debut= time.time()
 #if the sampling frequency of testing dataset is lower than the one for training dataset, we should do an interpolation to match the total number of points
@@ -68,6 +65,29 @@ A,B1,B2=patternClassification(model_raw_power.x,model_raw_trigger.y,predicted_le
 fin = time.time()
 print("classification time : ",fin-debut)
 
+# ta=np.linspace(0,len(A[0])-1,len(A[0]))
+# colors=['k','g','r','y','b']
+# j=0
+# plt.figure()
+# for i in range(len(A)):
+#     j=(i%5)
+#     plt.plot(ta,A[i],colors[j])
+#     plt.title('A')
+
+# tb1=np.linspace(0,len(B1[0])-1,len(B1[0]))
+# plt.figure()
+# for i in range(len(B1)):
+#     j=i%5
+#     plt.plot(tb1,B1[i],colors[j])
+#     plt.title('B1')
+
+# tb2=np.linspace(0,len(B2[0])-1,len(B2[0]))
+# plt.figure()
+# for i in range(len(B2)):
+#     j=i%5
+#     plt.plot(tb2,B2[i],colors[j])
+#     plt.title('B2')
+
 #create the model of pattern A and B
 model_low=np.mean(A,axis=0)
 model_high1=np.mean(B1,axis=0)
@@ -93,6 +113,11 @@ plt.ylabel('Tension (in Volt)')
 plt.figure()
 plt.title('Model B2 for filtered trace (model_high2)')
 plt.plot(t,model_high2,'k')
+plt.xlabel('Time (in Second)')
+plt.ylabel('Tension (in Volt)')
+plt.figure()
+plt.title('3 models')
+plt.plot(t,model_low,t,model_high1,t,model_high2)
 plt.xlabel('Time (in Second)')
 plt.ylabel('Tension (in Volt)')
 
