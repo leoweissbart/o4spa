@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 from scipy import signal
 from order4_keybits_to_HL import order4_keybits_to_HL
-from patternClassification import patternClassification, patternClassification_v2,patternClassification_v3
-from correlation_vs_model import correlation_vs_model_v2_2,correlation_vs_model_v3
+from patternClassification import patternClassification_v3
+from correlation_vs_model import correlation_vs_model_v3
 from order4_HL_to_keybits import order4_HL_to_keybits
 from printHex256bits import printHex256bits
 import time
@@ -99,26 +99,8 @@ keybits = [int(i) for i in keybits]
 predicted_level_x,predicted_level_z=order4_keybits_to_HL(keybits)
 
 #cut the measure in pattern according to the signal (supervised)
-A,B=patternClassification(model_filtered_x,model_filtered_y,predicted_level_z)
 P1,P2,H1,H2=patternClassification_v3(model_filtered_x,model_filtered_y,predicted_level_z)
-###################################################################################
-##    plot all the elements of A and B                                           ##
-###################################################################################
-ta=np.linspace(0,len(A[0])-1,len(A[0]))
-colors=['k','g','r','y','b']
-j=0
-plt.figure()
-for i in range(len(A)):
-    j=(i%5)
-    plt.plot(ta,A[i],colors[j])
-    plt.title('A')
-tb=np.linspace(0,len(B[0])-1,len(B[0]))
-plt.figure()
-for i in range(len(B)):
-    j=i%5
-    plt.plot(tb,B[i],colors[j])
-    plt.title('B')
-###################################################################################
+
 ###################################################################################
 ##    plot all the elements of P1,P2,P3,P4,H1,H2,H3,H4                           ##
 ###################################################################################
@@ -150,13 +132,6 @@ for i in range(len(H2)):
     plt.title('H2')
 ###################################################################################
 
-#create the model of pattern A and B
-model_low=np.mean(A,axis=0)
-model_high=np.mean(B,axis=0)
-#normalize models before correlation
-model_low=(model_low-np.mean(model_low))/(np.std(model_low))
-model_high=(model_high-np.mean(model_high))/(np.std(model_high))
-
 #create the model of pattern P1,P2,P3,P4,H1,H2,H3,H4
 model_P1=np.mean(P1,axis=0)
 model_P2=np.mean(P2,axis=0)
@@ -168,29 +143,16 @@ model_P2=(model_P2-np.mean(model_P2))/(np.std(model_P2))
 model_H1=(model_H1-np.mean(model_H1))/(np.std(model_H1))
 model_H2=(model_H2-np.mean(model_H2))/(np.std(model_H2))
 
-
-###################################################################################
-##    plot models                                                                ##
-###################################################################################
-t=np.linspace(0,(len(model_low)-1)*1e-4,len(model_low))
-plt.figure()
-plt.title('Model A,B for filtered trace (model_low, model_high)')
-plt.plot(t,model_low,'r',t,model_high,'b')
-plt.xlabel('Time (in Second)')
-plt.ylabel('Tension (in Volt)')
-plt.legend(('A','B'),loc='best')
-###################################################################################
-
 ###################################################################################
 ##    plot models                                                                ##
 ###################################################################################
 t=np.linspace(0,(len(model_P1)-1)*1e-4,len(model_P1))
 plt.figure()
-plt.title('Model P1,P2,P3,P4,H1,H2,H3,H4 for filtered trace')
+plt.title('Models')
 plt.plot(t,model_P1,t,model_P2,t,model_H1,t,model_H2)
 plt.xlabel('Time (in Second)')
 plt.ylabel('Tension (in Volt)')
-plt.legend(('P1','P2','H1','H2'),loc='best')
+plt.legend(('A1','A2','B1','B2'),loc='best')
 ###################################################################################
 
 #we do correlation
